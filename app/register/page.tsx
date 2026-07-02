@@ -2,8 +2,6 @@ import Link from "next/link";
 import { RegisterForm } from "./register-form";
 
 export default function RegisterPage() {
-  console.log("RegisterPage rendered");
-  console.log(process.env.DATABASE_URL);
   return (
     <div className="mx-auto w-full max-w-xl px-6 py-12">
       <h1 className="mb-6 text-2xl font-semibold">Create an account</h1>
