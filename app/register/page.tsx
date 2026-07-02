@@ -9,7 +9,7 @@ export default function RegisterPage() {
       <p className="mt-6 text-sm text-zinc-600 dark:text-zinc-400">
         Already have an account?{" "}
         <Link href="/login" className="underline">
-          Sign in {process.env.DATABASE_URL || "No database URL found"}
+          Sign in
         </Link>
       </p>
     </div>
