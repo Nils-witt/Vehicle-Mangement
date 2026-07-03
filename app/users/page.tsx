@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getCurrentUser } from "@/lib/current-user";
 import { prisma } from "@/lib/prisma";
 import { AccessDenied } from "@/app/access-denied";
+import { DeactivateUserButton } from "./deactivate-user-button";
 import { DeleteUserButton } from "./delete-user-button";
 
 export default async function UsersPage() {
@@ -37,6 +38,7 @@ export default async function UsersPage() {
             <tr className="border-b border-black/10 dark:border-white/10">
               <th className="py-2 pr-4 font-medium">Name</th>
               <th className="py-2 pr-4 font-medium">Email</th>
+              <th className="py-2 pr-4 font-medium">Status</th>
               <th className="py-2 pr-4 font-medium">Created</th>
               <th className="py-2 pr-4 font-medium">
                 <span className="sr-only">Actions</span>
@@ -52,6 +54,13 @@ export default async function UsersPage() {
                 <td className="py-2 pr-4">{user.name ?? "—"}</td>
                 <td className="py-2 pr-4">{user.email}</td>
                 <td className="py-2 pr-4">
+                  {user.isActive ? (
+                    "Active"
+                  ) : (
+                    <span className="text-red-600">Deactivated</span>
+                  )}
+                </td>
+                <td className="py-2 pr-4">
                   {user.createdAt.toLocaleDateString()}
                 </td>
                 <td className="py-2 pr-4">
@@ -63,6 +72,12 @@ export default async function UsersPage() {
                       >
                         Edit
                       </Link>
+                    )}
+                    {currentUser.canEditUsers && user.id !== currentUser.id && (
+                      <DeactivateUserButton
+                        userId={user.id}
+                        isActive={user.isActive}
+                      />
                     )}
                     {currentUser.canDeleteUsers && (
                       <DeleteUserButton userId={user.id} />

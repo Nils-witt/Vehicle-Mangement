@@ -4,7 +4,7 @@ import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { Prisma } from "@/app/generated/prisma/client";
-import { hasPermission } from "@/lib/current-user";
+import { getCurrentUser, hasPermission } from "@/lib/current-user";
 import { prisma } from "@/lib/prisma";
 
 export type UserFormState = {
@@ -148,5 +148,24 @@ export async function deleteUser(userId: string): Promise<void> {
   }
 
   await prisma.user.delete({ where: { id: userId } });
+  revalidatePath("/users");
+}
+
+export async function setUserActive(
+  userId: string,
+  isActive: boolean,
+): Promise<void> {
+  if (!(await hasPermission("canEditUsers"))) {
+    throw new Error("You don't have permission to edit users.");
+  }
+
+  if (!isActive) {
+    const currentUser = await getCurrentUser();
+    if (currentUser?.id === userId) {
+      throw new Error("You can't deactivate your own account.");
+    }
+  }
+
+  await prisma.user.update({ where: { id: userId }, data: { isActive } });
   revalidatePath("/users");
 }

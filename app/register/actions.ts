@@ -80,7 +80,7 @@ export async function register(
   } catch {
     return {
       error:
-        "Account created, but we couldn't send the verification email. Use \"Resend verification email\" on the sign-in page to try again.",
+        'Account created, but we couldn\'t send the verification email. Use "Resend verification email" on the sign-in page to try again.',
     };
   }
 

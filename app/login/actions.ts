@@ -1,7 +1,7 @@
 "use server";
 
 import { AuthError } from "next-auth";
-import { EmailNotVerifiedError, signIn } from "@/auth";
+import { AccountDeactivatedError, EmailNotVerifiedError, signIn } from "@/auth";
 import { sendVerificationEmail } from "@/lib/mailer";
 import { prisma } from "@/lib/prisma";
 import { createVerificationToken } from "@/lib/verification-token";
@@ -30,6 +30,9 @@ export async function login(
       redirectTo: callbackUrl,
     });
   } catch (error) {
+    if (error instanceof AccountDeactivatedError) {
+      return { error: "This account has been deactivated." };
+    }
     if (error instanceof EmailNotVerifiedError) {
       return {
         error: "Please verify your email address before signing in.",
@@ -73,7 +76,9 @@ export async function resendVerificationEmail(
   try {
     await sendVerificationEmail(email, token);
   } catch {
-    return { message: "Something went wrong sending the email. Please try again." };
+    return {
+      message: "Something went wrong sending the email. Please try again.",
+    };
   }
 
   return confirmation;
