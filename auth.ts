@@ -6,6 +6,9 @@ import { prisma } from "@/lib/prisma";
 export const { handlers, auth, signIn, signOut } = NextAuth({
   session: { strategy: "jwt" },
   pages: { signIn: "/login" },
+  // Required for self-hosted deployments (e.g. Docker) since Auth.js can't
+  // otherwise verify the incoming Host header is safe to trust.
+  trustHost: true,
   providers: [
     Credentials({
       credentials: {
