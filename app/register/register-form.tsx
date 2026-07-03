@@ -21,6 +21,15 @@ function SubmitButton() {
 export function RegisterForm() {
   const [state, formAction] = useActionState(register, {});
 
+  if (state.success) {
+    return (
+      <p className="max-w-sm text-sm" aria-live="polite">
+        Account created. We&apos;ve sent a verification link to your email
+        address — please check your inbox and confirm it before signing in.
+      </p>
+    );
+  }
+
   return (
     <form action={formAction} className="flex max-w-sm flex-col gap-4">
       <div className="flex flex-col gap-1">

@@ -16,6 +16,16 @@ services:
       timeout: 5s
       retries: 10
 
+  # Fake SMTP server for local development. Web UI at http://localhost:8025
+  # shows every email the app sends (e.g. verification links) without
+  # needing a real mailbox or SMTP provider.
+  mailhog:
+    image: mailhog/mailhog:v1.0.1
+    restart: unless-stopped
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+
   # One-off: `docker compose run --rm migrate` applies pending migrations.
   # Uses the `builder` stage since it still has the full Prisma CLI, unlike
   # the lean runtime image.
@@ -41,9 +51,18 @@ services:
     environment:
       DATABASE_URL: postgresql://kfz:kfz@postgres:5432/kfz_verwaltung?schema=public
       AUTH_SECRET: ${AUTH_SECRET}
+      APP_URL: ${APP_URL:-http://localhost:3000}
+      SMTP_HOST: ${SMTP_HOST:-mailhog}
+      SMTP_PORT: ${SMTP_PORT:-1025}
+      SMTP_SECURE: ${SMTP_SECURE:-false}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM: ${SMTP_FROM:-no-reply@kfz-verwaltung.local}
     depends_on:
       postgres:
         condition: service_healthy
+      mailhog:
+        condition: service_started
 
 volumes:
   postgres-data:

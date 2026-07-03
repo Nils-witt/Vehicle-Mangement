@@ -1,7 +1,11 @@
-import NextAuth from "next-auth";
+import NextAuth, { CredentialsSignin } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
+
+export class EmailNotVerifiedError extends CredentialsSignin {
+  code = "email_not_verified";
+}
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   session: { strategy: "jwt" },
@@ -31,6 +35,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const isValid = await bcrypt.compare(password, user.password);
         if (!isValid) return null;
 
+        if (!user.emailVerified) throw new EmailNotVerifiedError();
+
         return { id: user.id, email: user.email, name: user.name };
       },
     }),
@@ -49,7 +55,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       return session;
     },
     authorized({ request, auth: session }) {
-      if (["/login", "/register"].includes(request.nextUrl.pathname)) {
+      if (
+        ["/login", "/register"].includes(request.nextUrl.pathname) ||
+        request.nextUrl.pathname.startsWith("/api/verify-email")
+      ) {
         return true;
       }
       return !!session?.user;

@@ -1,10 +1,14 @@
 "use server";
 
 import { AuthError } from "next-auth";
-import { signIn } from "@/auth";
+import { EmailNotVerifiedError, signIn } from "@/auth";
+import { sendVerificationEmail } from "@/lib/mailer";
+import { prisma } from "@/lib/prisma";
+import { createVerificationToken } from "@/lib/verification-token";
 
 export type LoginState = {
   error?: string;
+  unverifiedEmail?: string;
 };
 
 export async function login(
@@ -26,6 +30,12 @@ export async function login(
       redirectTo: callbackUrl,
     });
   } catch (error) {
+    if (error instanceof EmailNotVerifiedError) {
+      return {
+        error: "Please verify your email address before signing in.",
+        unverifiedEmail: email,
+      };
+    }
     if (error instanceof AuthError) {
       return { error: "Invalid email or password." };
     }
@@ -33,4 +43,38 @@ export async function login(
   }
 
   return {};
+}
+
+export type ResendState = {
+  message?: string;
+};
+
+export async function resendVerificationEmail(
+  _prevState: ResendState,
+  formData: FormData,
+): Promise<ResendState> {
+  const email = String(formData.get("email") ?? "").trim();
+  const confirmation = {
+    message:
+      "If that account exists and isn't verified yet, we've sent a new verification link.",
+  };
+
+  if (!email) return confirmation;
+
+  const user = await prisma.user.findUnique({ where: { email } });
+  if (!user || user.emailVerified) return confirmation;
+
+  const { token, expiresAt } = createVerificationToken();
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { verificationToken: token, verificationTokenExpiresAt: expiresAt },
+  });
+
+  try {
+    await sendVerificationEmail(email, token);
+  } catch {
+    return { message: "Something went wrong sending the email. Please try again." };
+  }
+
+  return confirmation;
 }

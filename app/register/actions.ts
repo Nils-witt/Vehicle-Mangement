@@ -1,13 +1,14 @@
 "use server";
 
 import bcrypt from "bcryptjs";
-import { AuthError } from "next-auth";
 import { Prisma } from "@/app/generated/prisma/client";
-import { signIn } from "@/auth";
+import { sendVerificationEmail } from "@/lib/mailer";
 import { prisma } from "@/lib/prisma";
+import { createVerificationToken } from "@/lib/verification-token";
 
 export type RegisterState = {
   error?: string;
+  success?: boolean;
 };
 
 const MIN_PASSWORD_LENGTH = 8;
@@ -36,6 +37,7 @@ export async function register(
   }
 
   const hashedPassword = await bcrypt.hash(password, 10);
+  const { token, expiresAt } = createVerificationToken();
 
   try {
     await prisma.$transaction(async (tx) => {
@@ -46,6 +48,8 @@ export async function register(
           email,
           name: name.length > 0 ? name : null,
           password: hashedPassword,
+          verificationToken: token,
+          verificationTokenExpiresAt: expiresAt,
           ...(isFirstUser
             ? {
                 canViewUsers: true,
@@ -72,13 +76,13 @@ export async function register(
   }
 
   try {
-    await signIn("credentials", { email, password, redirectTo: "/" });
-  } catch (error) {
-    if (error instanceof AuthError) {
-      return { error: "Account created. Please sign in." };
-    }
-    throw error;
+    await sendVerificationEmail(email, token);
+  } catch {
+    return {
+      error:
+        "Account created, but we couldn't send the verification email. Use \"Resend verification email\" on the sign-in page to try again.",
+    };
   }
 
-  return {};
+  return { success: true };
 }
