@@ -123,7 +123,12 @@ export async function updateUser(
         email,
         name,
         ...permissions,
-        ...(password ? { password: await bcrypt.hash(password, 10) } : {}),
+        ...(password
+          ? {
+              password: await bcrypt.hash(password, 10),
+              passwordChangedAt: new Date(),
+            }
+          : {}),
       },
     });
   } catch (error) {

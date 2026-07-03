@@ -42,7 +42,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         if (!user.isActive) throw new AccountDeactivatedError();
         if (!user.emailVerified) throw new EmailNotVerifiedError();
 
-        return { id: user.id, email: user.email, name: user.name };
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          passwordChangedAt: user.passwordChangedAt.getTime(),
+        };
       },
     }),
   ],
@@ -51,16 +56,23 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (user) {
         // Fresh sign-in: authorize() already confirmed the account is active.
         token.id = user.id;
+        token.passwordChangedAt = (
+          user as { passwordChangedAt?: number }
+        ).passwordChangedAt;
         return token;
       }
 
       // Existing session: re-check on every request so a deactivated
-      // account is signed out immediately, not just blocked at next login.
+      // account or a changed password signs the session out immediately,
+      // not just at next login.
       if (typeof token.id === "string") {
         const dbUser = await prisma.user.findUnique({
           where: { id: token.id },
         });
         if (!dbUser || !dbUser.isActive) return null;
+        if (dbUser.passwordChangedAt.getTime() !== token.passwordChangedAt) {
+          return null;
+        }
       }
 
       return token;
@@ -73,7 +85,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
     authorized({ request, auth: session }) {
       if (
-        ["/login", "/register"].includes(request.nextUrl.pathname) ||
+        ["/login", "/register", "/forgot-password", "/reset-password"].includes(
+          request.nextUrl.pathname,
+        ) ||
         request.nextUrl.pathname.startsWith("/api/verify-email")
       ) {
         return true;

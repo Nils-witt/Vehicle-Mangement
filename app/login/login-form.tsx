@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import { login, resendVerificationEmail } from "./actions";
@@ -58,9 +59,17 @@ export function LoginForm({ callbackUrl }: { callbackUrl: string }) {
           />
         </div>
         <div className="flex flex-col gap-1">
-          <label htmlFor="password" className="text-sm font-medium">
-            Password
-          </label>
+          <div className="flex items-center justify-between">
+            <label htmlFor="password" className="text-sm font-medium">
+              Password
+            </label>
+            <Link
+              href="/forgot-password"
+              className="text-sm text-zinc-600 underline dark:text-zinc-400"
+            >
+              Forgot password?
+            </Link>
+          </div>
           <input
             id="password"
             name="password"

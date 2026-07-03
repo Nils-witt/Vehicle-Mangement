@@ -15,14 +15,18 @@ export default async function LoginPage({
     callbackUrl?: string;
     verified?: string;
     verifyError?: string;
+    passwordReset?: string;
   }>;
 }) {
-  const { callbackUrl, verified, verifyError } = await searchParams;
+  const { callbackUrl, verified, verifyError, passwordReset } =
+    await searchParams;
   const notice = verified
     ? "Your email has been verified. You can now sign in."
     : verifyError
       ? VERIFY_ERROR_MESSAGES[verifyError]
-      : undefined;
+      : passwordReset
+        ? "Your password has been reset. You can now sign in."
+        : undefined;
 
   return (
     <div className="mx-auto w-full max-w-xl px-6 py-12">
